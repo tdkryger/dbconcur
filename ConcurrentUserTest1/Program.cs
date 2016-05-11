@@ -37,6 +37,8 @@ namespace ConcurrentUserTest1
 
         static void initializeWorkers()
         {
+
+
             for (int i = 0; i < workers.Length; i++)
             {
                 workers[i] = new System.ComponentModel.BackgroundWorker();
