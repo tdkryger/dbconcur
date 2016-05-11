@@ -1,24 +1,24 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConcurrentUserTest1
 {
-    class Reservation
+    public class Reservation
     {
+        string user;
+        string pw;
 
-
-        public Reservation(String User, String PW)
+        public Reservation(string user, string pw)
         {
-
+            this.user = user;
+            this.pw = pw;
         }
-        /**
-        Method uses planeNo to find a seat and ID to reserve a seat to this user.
-        */
-        public string reserve(string planeNo, long ID)
+
+        public void clearAllBookings(string plane_no)
+        {
+        }
+
+        public String reserve(String planeNo, long ID)
         {
             string seatNo = null;
             Utility.HandleConnection(delegate (MySqlConnection conn)
@@ -37,9 +37,9 @@ namespace ConcurrentUserTest1
             return seatNo;
         }
 
-        public int book(String planeNo, String seatNo, long ID)
+        public bool isAllReserved(string plane_no)
         {
-            return 0;
+            return true;
         }
     }
 }
