@@ -19,6 +19,8 @@ namespace ConcurrentUserTest1
 
         public void clearAllBookings(string plane_no)
         {
+            var command = new MySqlCommand("UPDATE seat reserved = NULL, booked = NULL, booking_time = NULL", conn);
+            command.ExecuteNonQuery();
         }
 
         public String reserve(String planeNo, long ID)
@@ -43,14 +45,12 @@ namespace ConcurrentUserTest1
 
         public int book(string plane_no, string seat_no, long id)
         {
-            var conn = Utility.GetConnection();
-
             var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
             selectCommand.Parameters.AddWithValue("plane_no", plane_no);
             selectCommand.Parameters.AddWithValue("seat_no", seat_no);
             var reader = selectCommand.ExecuteReader();
 
-            // There is a reservation
+            // The specified seat is found!
             if (reader.HasRows)
             {
                 reader.Read();
@@ -67,40 +67,36 @@ namespace ConcurrentUserTest1
                     return -2;
                 }
 
+                if (bookingTime == 1)
+                {
+                    return -3;
+                }
+
+                // Fucked up time representation, this is not over!
                 if (booked != null)
                 {
                     return -4;
                 }
 
-                if (bookingTime == 1)
-                {
+                var updateCommand = new MySqlCommand("UPDATE seat SET booked = @id WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
+                updateCommand.Parameters.AddWithValue("id", id);
+                updateCommand.Parameters.AddWithValue("plane_no", plane_no);
+                updateCommand.Parameters.AddWithValue("seat_no", seat_no);
+                
+                var result = updateCommand.ExecuteNonQuery();
 
+                if (result == 1)// Rows affected
+                {
+                    return 0;
+                }
+                else
+                {
+                    return -5;
                 }
             }
-
-            //Make sure that the id has reserved the seat, and then attempt to book it
-            switch (id)
+            else
             {
-                case 0:
-                    //Booked successfully
-                    return 0;
-                case -1:
-                    //Not reserved at all
-                    return -1;
-                case -2:
-                    //Not reserved by this customer id
-                    return -2;
-                case -3:
-                    //Reservation timeout
-                    return -3;
-                case -4:
-                    //Seat is already booked
-                    return -4;
-                case -5:
-                    //All other errors
-                    return -5;
-                default:
-                    return 1;
+                return -5;
             }
         }
 
