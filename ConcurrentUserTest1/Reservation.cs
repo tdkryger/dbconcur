@@ -43,6 +43,41 @@ namespace ConcurrentUserTest1
 
         public int book(string plane_no, string seat_no, long id)
         {
+            var conn = Utility.GetConnection();
+
+            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
+            selectCommand.Parameters.AddWithValue("plane_no", plane_no);
+            selectCommand.Parameters.AddWithValue("seat_no", seat_no);
+            var reader = selectCommand.ExecuteReader();
+
+            // There is a reservation
+            if (reader.HasRows)
+            {
+                reader.Read();
+                int? reserved = (int?)reader.GetValue(2);
+                int? booked = (int?)reader.GetValue(3);
+                int? bookingTime = (int?)reader.GetValue(4);
+
+                if (reserved == null)
+                {
+                    return -1;
+                }
+                else if (reserved != id)
+                {
+                    return -2;
+                }
+
+                if (booked != null)
+                {
+                    return -4;
+                }
+
+                if (bookingTime == 1)
+                {
+
+                }
+            }
+
             //Make sure that the id has reserved the seat, and then attempt to book it
             switch (id)
             {
