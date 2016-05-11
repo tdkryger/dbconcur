@@ -81,22 +81,22 @@ namespace ConcurrentUserTest1
 
                 if (reserved == null)
                 {
-                    return -1;
+                    return (int)ReturnCode.SeatNotReserved;
                 }
                 else if (reserved != id)
                 {
-                    return -2;
-                }
-
-                if (bookingTime == 1)
-                {
-                    return -3;
+                    return (int)ReturnCode.SeatNotReservedForUser;
                 }
 
                 // Fucked up time representation, this is not over!
+                if (bookingTime == 1)
+                {
+                    return (int)ReturnCode.ReservationTimeout;
+                }
+
                 if (booked != null)
                 {
-                    return -4;
+                    return (int)ReturnCode.SeatAlreadyOccupied;
                 }
 
                 var updateCommand = new MySqlCommand("UPDATE seat SET booked = @id, booking_time = @booking_time WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
@@ -109,16 +109,16 @@ namespace ConcurrentUserTest1
 
                 if (result == 1)// Rows affected
                 {
-                    return 0;
+                    return (int)ReturnCode.SuccefulBooking;
                 }
                 else
                 {
-                    return -5;
+                    return (int)ReturnCode.Error;
                 }
             }
             else
             {
-                return -5;
+                return (int)ReturnCode.Error;
             }
         }
 
@@ -157,5 +157,15 @@ namespace ConcurrentUserTest1
 
             return true;
         }
+    }
+
+    public enum ReturnCode
+    {
+        SuccefulBooking = 0,
+        SeatNotReserved = -1,
+        SeatNotReservedForUser = -2,
+        ReservationTimeout = -3,
+        SeatAlreadyOccupied = -4,
+        Error = -5
     }
 }
