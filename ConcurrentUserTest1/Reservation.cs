@@ -18,7 +18,8 @@ namespace ConcurrentUserTest1
 
         public void clearAllBookings(string plane_no)
         {
-            var command = new MySqlCommand("UPDATE seat reserved = NULL, booked = NULL, booking_time = NULL", conn);
+            var command = new MySqlCommand("UPDATE seat reserved = NULL, booked = NULL, booking_time = NULL WHERE plane_no = @plane_no", conn);
+            command.Parameters.AddWithValue("plane_no", plane_no);
             command.ExecuteNonQuery();
         }
 
@@ -76,8 +77,9 @@ namespace ConcurrentUserTest1
                     return -4;
                 }
 
-                var updateCommand = new MySqlCommand("UPDATE seat SET booked = @id WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
+                var updateCommand = new MySqlCommand("UPDATE seat SET booked = @id, booking_time = @booking_time WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
                 updateCommand.Parameters.AddWithValue("id", id);
+                updateCommand.Parameters.AddWithValue("booking_time", bookingTime);
                 updateCommand.Parameters.AddWithValue("plane_no", plane_no);
                 updateCommand.Parameters.AddWithValue("seat_no", seat_no);
                 
@@ -100,32 +102,37 @@ namespace ConcurrentUserTest1
 
         public void bookAll(string plane_no)
         {
-
+            var command = new MySqlCommand("UPDATE seat reserved = 12345, booked = 12345, booking_time = 12345 WHERE plane_no = @plane_no", conn);
+            command.Parameters.AddWithValue("plane_no", plane_no);
+            command.ExecuteNonQuery();
         }
 
         public bool isAllBooked(string plane_no)
         {
-            var command = new MySqlCommand("SELECT plane_no FROM seat where plane_no = @plane_no and ;", conn);
+            var command = new MySqlCommand("SELECT booked FROM seat WHERE plane_no = @plane_no", conn);
             var reader = command.ExecuteReader();
 
             while (reader.Read())
             {
-                var seatNo = reader.GetString("seat_no");
-                Console.Out.WriteLine(seatNo);
+                if (reader.GetValue(3) == null)
+                    return false;
             }
+
             return true;
         }
 
         public bool isAllReserved(string plane_no)
         {
-            var command = new MySqlCommand("SELECT * FROM seat;", conn);
+            var command = new MySqlCommand("SELECT * FROM seat WHERE plane_no = @plane_no", conn);
+            command.Parameters.AddWithValue("plane_no", plane_no);
             var reader = command.ExecuteReader();
 
             while (reader.Read())
             {
-                var seatNo = reader.GetString("seat_no");
-                Console.Out.WriteLine(seatNo);
+                if (reader.GetValue(2) == null)
+                    return false;
             }
+
             return true;
         }
     }
