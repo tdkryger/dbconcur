@@ -8,7 +8,6 @@ namespace ConcurrentUserTest1
         private MySqlConnection conn;
         private string user;
         private string pw;
-        private long id;
 
         public Reservation(string user, string pw)
         {
@@ -25,7 +24,6 @@ namespace ConcurrentUserTest1
 
         public string reserve(string planeNo, long id)
         {
-            this.id = id;
             string seatNo = null;
             Utility.HandleConnection(delegate (MySqlConnection conn)
             {
