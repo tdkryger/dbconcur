@@ -8,7 +8,7 @@ namespace ConcurrentUserTest1
         private MySqlConnection conn;
         private string user;
         private string pw;
-        private long ID;
+        private long id;
 
         public Reservation(string user, string pw)
         {
@@ -23,9 +23,9 @@ namespace ConcurrentUserTest1
             command.ExecuteNonQuery();
         }
 
-        public String reserve(String planeNo, long ID)
+        public string reserve(string planeNo, long id)
         {
-            this.ID = ID;
+            this.id = id;
             string seatNo = null;
             Utility.HandleConnection(delegate (MySqlConnection conn)
             {
@@ -35,7 +35,7 @@ namespace ConcurrentUserTest1
                 reader.Read();
 
                 seatNo = reader.GetString("seat_no");
-                var updateCommand = new MySqlCommand("UPDATE seat set reserved = " + ID + " Where seat_no = " + seatNo, conn);
+                var updateCommand = new MySqlCommand("UPDATE seat set reserved = " + id + " Where seat_no = " + seatNo, conn);
                 int succes = updateCommand.ExecuteNonQuery();
                 //Console.Out.WriteLine(seatNo);
             });
