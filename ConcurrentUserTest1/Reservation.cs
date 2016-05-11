@@ -8,12 +8,14 @@ namespace ConcurrentUserTest1
         private MySqlConnection conn;
         private string user;
         private string pw;
+        private int timeout;
 
         public Reservation(string user, string pw)
         {
+            conn = Utility.GetConnection();
             this.user = user;
             this.pw = pw;
-            conn = Utility.GetConnection();
+            timeout = -5;
         }
 
         public void clearAllBookings(string plane_no)
@@ -51,7 +53,7 @@ namespace ConcurrentUserTest1
                 var seat_no = reader.GetString("seat_no");
                 var updateCommand = new MySqlCommand("UPDATE seat SET reserved = @id, booking_time = @booking_time WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
                 updateCommand.Parameters.AddWithValue("id", id);
-                updateCommand.Parameters.AddWithValue("booking_time", 1223233); // ?????
+                updateCommand.Parameters.AddWithValue("booking_time", DateTime.Now);
                 updateCommand.Parameters.AddWithValue("plane_no", planeNo);
                 updateCommand.Parameters.AddWithValue("seat_no", seat_no);
                 updateCommand.ExecuteNonQuery();
@@ -77,7 +79,7 @@ namespace ConcurrentUserTest1
                 reader.Read();
                 int? reserved = (int?)reader.GetValue(2);
                 int? booked = (int?)reader.GetValue(3);
-                int? bookingTime = (int?)reader.GetValue(4);
+                DateTime bookingTime = reader.GetDateTime("booking_time");
 
                 if (reserved == null)
                 {
@@ -87,9 +89,8 @@ namespace ConcurrentUserTest1
                 {
                     return (int)ReturnCode.SeatNotReservedForUser;
                 }
-
-                // Fucked up time representation, this is not over!
-                if (bookingTime == 1)
+                
+                if (DateTime.Compare(bookingTime, DateTime.Now.AddMinutes(timeout)) >= 0)
                 {
                     return (int)ReturnCode.ReservationTimeout;
                 }
