@@ -33,7 +33,7 @@ namespace ConcurrentUserTest1
                 reader.Read();
 
                 seatNo = reader.GetString("seat_no");
-                var updateCommand = new MySqlCommand("UPDATE seat set reserved = " + ID + " Where seat_no = " + seatNo, conn);
+                var updateCommand = new MySqlCommand("UPDATE seat set reserved = " + id + " Where seat_no = " + seatNo, conn);
                 int succes = updateCommand.ExecuteNonQuery();
                 //Console.Out.WriteLine(seatNo);
             });
