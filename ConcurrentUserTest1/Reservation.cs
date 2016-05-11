@@ -43,14 +43,17 @@ namespace ConcurrentUserTest1
 
             //return seatNo;
 
-            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE reserved = NULL AND booked = null AND booking_time = null", conn);
-            var reader = selectCommand.ExecuteReader();
+            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE reserved IS NULL AND booked IS NULL AND booking_time IS NULL", conn);
 
-            reader.Read();
-
-            if (reader.HasRows)
+            string seat_no;
+            using (MySqlDataReader reader = selectCommand.ExecuteReader())
             {
-                var seat_no = reader.GetString("seat_no");
+                reader.Read();
+                seat_no = reader.HasRows ? reader.GetString("seat_no") : string.Empty;
+            }
+
+            if (!string.IsNullOrEmpty(seat_no))
+            {
                 var updateCommand = new MySqlCommand("UPDATE seat SET reserved = @id, booking_time = @booking_time WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
                 updateCommand.Parameters.AddWithValue("id", id);
                 updateCommand.Parameters.AddWithValue("booking_time", DateTime.Now);
@@ -77,11 +80,11 @@ namespace ConcurrentUserTest1
             if (reader.HasRows)
             {
                 reader.Read();
-                int? reserved = (int?)reader.GetValue(2);
-                int? booked = (int?)reader.GetValue(3);
+                int reserved = reader.IsDBNull(2) ? -1337 : reader.GetInt32("reserved");
+                int booked = reader.IsDBNull(3) ? -1337 : reader.GetInt32("booked");
                 DateTime bookingTime = reader.GetDateTime("booking_time");
-
-                if (reserved == null)
+                reader.Close();
+                if (reserved == -1337)
                 {
                     return (int)ReturnCode.SeatNotReserved;
                 }
@@ -89,13 +92,13 @@ namespace ConcurrentUserTest1
                 {
                     return (int)ReturnCode.SeatNotReservedForUser;
                 }
-                
+
                 if (DateTime.Compare(bookingTime, DateTime.Now.AddMinutes(timeout)) >= 0)
                 {
                     return (int)ReturnCode.ReservationTimeout;
                 }
 
-                if (booked != null)
+                if (booked != -1337)
                 {
                     return (int)ReturnCode.SeatAlreadyOccupied;
                 }
@@ -105,7 +108,7 @@ namespace ConcurrentUserTest1
                 updateCommand.Parameters.AddWithValue("booking_time", bookingTime);
                 updateCommand.Parameters.AddWithValue("plane_no", plane_no);
                 updateCommand.Parameters.AddWithValue("seat_no", seat_no);
-                
+
                 var result = updateCommand.ExecuteNonQuery();
 
                 if (result == 1)// Rows affected
@@ -125,20 +128,25 @@ namespace ConcurrentUserTest1
 
         public void bookAll(string plane_no)
         {
-            var command = new MySqlCommand("UPDATE seat SET reserved = 12345, booked = 12345, booking_time = 12345 WHERE plane_no = @plane_no", conn);
+            var command = new MySqlCommand("UPDATE seat SET reserved = 12345, booked = 12345, booking_time = @booking_time WHERE plane_no = @plane_no", conn);
             command.Parameters.AddWithValue("plane_no", plane_no);
+            command.Parameters.AddWithValue("booking_time", DateTime.Now);
             command.ExecuteNonQuery();
         }
 
         public bool isAllBooked(string plane_no)
         {
             var command = new MySqlCommand("SELECT booked FROM seat WHERE plane_no = @plane_no", conn);
+            command.Parameters.AddWithValue("plane_no", plane_no);
             var reader = command.ExecuteReader();
 
             while (reader.Read())
             {
-                if (reader.GetValue(3) == null)
+                if (reader.IsDBNull(0))
+                {
+                    reader.Close();
                     return false;
+                }
             }
 
             return true;
@@ -153,7 +161,10 @@ namespace ConcurrentUserTest1
             while (reader.Read())
             {
                 if (reader.GetValue(2) == null)
+                {
+                    reader.Close();
                     return false;
+                }
             }
 
             return true;
