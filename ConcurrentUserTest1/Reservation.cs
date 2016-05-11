@@ -1,16 +1,19 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using System;
 
 namespace ConcurrentUserTest1
 {
     public class Reservation
     {
-        string user;
-        string pw;
+        private MySqlConnection conn;
+        private string user;
+        private string pw;
 
         public Reservation(string user, string pw)
         {
             this.user = user;
             this.pw = pw;
+            conn = Utility.GetConnection();
         }
 
         public string reserve(string plane_no, long id)
