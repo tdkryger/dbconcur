@@ -20,7 +20,7 @@ namespace ConcurrentUserTest1
 
         static void Main(string[] args)
         {
-            DatabaseConnectionTest.Connect(delegate (MySqlConnection conn)
+            Utility.HandleConnection(delegate (MySqlConnection conn)
             {
                 var command = new MySqlCommand("SELECT * FROM seat;", conn);
                 var reader = command.ExecuteReader();
