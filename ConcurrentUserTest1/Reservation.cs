@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,13 +11,28 @@ namespace ConcurrentUserTest1
     {
 
 
-        public Reservation(String User, String PW) {
+        public Reservation(String User, String PW)
+        {
 
         }
 
-        public String reserve(String planeNo, long ID)
+        public string reserve(string planeNo, long ID)
         {
-            String seatNo = null;
+            string seatNo = null;
+            DatabaseConnectionTest.Connect(delegate (MySqlConnection conn)
+            {
+                var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE Reserved EQUALS NULL;", conn);
+                var reader = selectCommand.ExecuteReader();
+
+                reader.Read();
+
+                seatNo = reader.GetString("seat_no");
+                var updateCommand = new MySqlCommand("UPDATE seat set reserved = " + ID + " Where seat_no = " + seatNo, conn);
+                int succes = updateCommand.Executed
+
+                //Console.Out.WriteLine(seatNo);
+            });
+
             return seatNo;
         }
 
