@@ -18,28 +18,50 @@ namespace ConcurrentUserTest1
 
         public void clearAllBookings(string plane_no)
         {
-            var command = new MySqlCommand("UPDATE seat reserved = NULL, booked = NULL, booking_time = NULL WHERE plane_no = @plane_no", conn);
+            var command = new MySqlCommand("UPDATE seat SET reserved = NULL, booked = NULL, booking_time = NULL WHERE plane_no = @plane_no", conn);
             command.Parameters.AddWithValue("plane_no", plane_no);
             command.ExecuteNonQuery();
         }
 
         public string reserve(string planeNo, long id)
         {
-            string seatNo = null;
-            Utility.HandleConnection(delegate (MySqlConnection conn)
+            //string seatNo = null;
+            //Utility.HandleConnection(delegate (MySqlConnection conn)
+            //{
+            //    var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE Reserved EQUALS NULL;", conn);
+            //    var reader = selectCommand.ExecuteReader();
+
+            //    reader.Read();
+
+            //    seatNo = reader.GetString("seat_no");
+            //    var updateCommand = new MySqlCommand("UPDATE seat set reserved = " + id + " Where seat_no = " + seatNo, conn);
+            //    int succes = updateCommand.ExecuteNonQuery();
+            //    //Console.Out.WriteLine(seatNo);
+            //});
+
+            //return seatNo;
+
+            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE reserved = NULL AND booked = null AND booking_time = null", conn);
+            var reader = selectCommand.ExecuteReader();
+
+            reader.Read();
+
+            if (reader.HasRows)
             {
-                var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE Reserved EQUALS NULL;", conn);
-                var reader = selectCommand.ExecuteReader();
+                var seat_no = reader.GetString("seat_no");
+                var updateCommand = new MySqlCommand("UPDATE seat SET reserved = @id, booking_time = @booking_time WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
+                updateCommand.Parameters.AddWithValue("id", id);
+                updateCommand.Parameters.AddWithValue("booking_time", 1223233); // ?????
+                updateCommand.Parameters.AddWithValue("plane_no", planeNo);
+                updateCommand.Parameters.AddWithValue("seat_no", seat_no);
+                updateCommand.ExecuteNonQuery();
 
-                reader.Read();
-
-                seatNo = reader.GetString("seat_no");
-                var updateCommand = new MySqlCommand("UPDATE seat set reserved = " + id + " Where seat_no = " + seatNo, conn);
-                int succes = updateCommand.ExecuteNonQuery();
-                //Console.Out.WriteLine(seatNo);
-            });
-
-            return seatNo;
+                return seat_no;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public int book(string plane_no, string seat_no, long id)
@@ -102,7 +124,7 @@ namespace ConcurrentUserTest1
 
         public void bookAll(string plane_no)
         {
-            var command = new MySqlCommand("UPDATE seat reserved = 12345, booked = 12345, booking_time = 12345 WHERE plane_no = @plane_no", conn);
+            var command = new MySqlCommand("UPDATE seat SET reserved = 12345, booked = 12345, booking_time = 12345 WHERE plane_no = @plane_no", conn);
             command.Parameters.AddWithValue("plane_no", plane_no);
             command.ExecuteNonQuery();
         }
