@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using System;
 
 namespace ConcurrentUserTest1
 {
@@ -6,11 +7,13 @@ namespace ConcurrentUserTest1
     {
         string user;
         string pw;
+        MySqlConnection mySqlConnection;
 
         public Reservation(string user, string pw)
         {
             this.user = user;
             this.pw = pw;
+            mySqlConnection = Utility.GetConnection();
         }
 
         public string reserve(string plane_no, long id)
@@ -50,20 +53,36 @@ namespace ConcurrentUserTest1
 
         public void bookAll(string plane_no)
         {
+
         }
 
         public void clearAllBookings(string plane_no)
         {
+
         }
 
         public bool isAllBooked(string plane_no)
         {
-            return true;
+            var command = new MySqlCommand("SELECT plane_no FROM seat where plane_no = @plane_no and booked IS NULL;", mySqlConnection);
+            command.Parameters.AddWithValue("plane_no", plane_no);
+            var reader = command.ExecuteReader();
+
+            if (reader.HasRows)
+                return false;
+            else
+                return true;
         }
 
         public bool isAllReserved(string plane_no)
         {
-            return true;
+            var command = new MySqlCommand("SELECT plane_no FROM seat where plane_no = @plane_no and reserved IS NULL;", mySqlConnection);
+            command.Parameters.AddWithValue("plane_no", plane_no);
+            var reader = command.ExecuteReader();
+
+            if (reader.HasRows)
+                return false;
+            else
+                return true;
         }
     }
 }
