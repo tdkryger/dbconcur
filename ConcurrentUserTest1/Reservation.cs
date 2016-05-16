@@ -27,22 +27,6 @@ namespace ConcurrentUserTest1
 
         public string reserve(string planeNo, long id)
         {
-            //string seatNo = null;
-            //Utility.HandleConnection(delegate (MySqlConnection conn)
-            //{
-            //    var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE Reserved EQUALS NULL;", conn);
-            //    var reader = selectCommand.ExecuteReader();
-
-            //    reader.Read();
-
-            //    seatNo = reader.GetString("seat_no");
-            //    var updateCommand = new MySqlCommand("UPDATE seat set reserved = " + id + " Where seat_no = " + seatNo, conn);
-            //    int succes = updateCommand.ExecuteNonQuery();
-            //    //Console.Out.WriteLine(seatNo);
-            //});
-
-            //return seatNo;
-
             var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE reserved IS NULL AND booked IS NULL AND booking_time IS NULL", conn);
 
             string seat_no;
@@ -93,7 +77,7 @@ namespace ConcurrentUserTest1
                     return (int)ReturnCode.SeatNotReservedForUser;
                 }
 
-                if (DateTime.Compare(bookingTime, DateTime.Now.AddMinutes(timeout)) >= 0)
+                if (DateTime.Compare(bookingTime, DateTime.Now.AddMinutes(timeout)) <= 0)
                 {
                     return (int)ReturnCode.ReservationTimeout;
                 }
@@ -149,23 +133,27 @@ namespace ConcurrentUserTest1
                 }
             }
 
+            reader.Close();
+
             return true;
         }
 
         public bool isAllReserved(string plane_no)
         {
-            var command = new MySqlCommand("SELECT * FROM seat WHERE plane_no = @plane_no", conn);
+            var command = new MySqlCommand("SELECT reserved FROM seat WHERE plane_no = @plane_no", conn);
             command.Parameters.AddWithValue("plane_no", plane_no);
             var reader = command.ExecuteReader();
 
             while (reader.Read())
             {
-                if (reader.GetValue(2) == null)
+                if (reader.IsDBNull(0))
                 {
                     reader.Close();
                     return false;
                 }
             }
+
+            reader.Close();
 
             return true;
         }

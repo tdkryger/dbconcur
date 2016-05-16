@@ -1,45 +1,42 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ConcurrentUserTest1;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Diagnostics;
 
 namespace ConcurrentUserTest1.Tests
 {
     [TestClass()]
     public class ReservationTests
     {
-        [TestMethod()]
-        public void ReservationTest()
+        private Reservation reservation;
+        private string PLANE_NO = "CR9";
+        private string USER_NAME = "test";
+        private string PASSWORD = "testpass";
+        private long TEST_ID = 123456789;
+        
+        [TestInitialize()]
+        public void BeforeAll()
         {
-            Assert.Fail();
+            reservation = new Reservation(USER_NAME, PASSWORD);
+            reservation.clearAllBookings(PLANE_NO);
         }
-
-        [TestMethod()]
-        public void clearAllBookingsTest()
+        
+        [TestCleanup()]
+        public void AfterAll()
         {
-            Assert.Fail();
+            reservation.clearAllBookings(PLANE_NO);
+            reservation = null;
         }
 
         [TestMethod()]
         public void reserveTest()
         {
-            Reservation res = new Reservation("", "");
-
-            var result = res.reserve("CR9", 123);
-
-            Assert.IsNotNull(result);
+            var result = reservation.reserve(PLANE_NO, TEST_ID);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result));
         }
 
         [TestMethod()]
         public void bookTest()
         {
-            Reservation res = new Reservation("", "");
-
-            var result = res.book("CR9", "A10", 123);
+            var seat = reservation.reserve(PLANE_NO, TEST_ID);
+            var result = reservation.book(PLANE_NO, seat, TEST_ID);
 
             Assert.IsTrue(result == 0);
         }
@@ -47,23 +44,30 @@ namespace ConcurrentUserTest1.Tests
         [TestMethod()]
         public void bookAllTest()
         {
-            var res = new Reservation("", "");
+            reservation.bookAll(PLANE_NO);
 
-            res.bookAll("CR9");
-
-            Assert.IsTrue(res.isAllBooked("CR9"));
+            Assert.IsTrue(reservation.isAllBooked(PLANE_NO));
         }
 
         [TestMethod()]
         public void isAllBookedTest()
         {
-            Assert.Fail();
+            Assert.IsFalse(reservation.isAllBooked(PLANE_NO));
+            reservation.bookAll(PLANE_NO);
+            Assert.IsTrue(reservation.isAllBooked(PLANE_NO));
         }
 
         [TestMethod()]
         public void isAllReservedTest()
         {
-            Assert.Fail();
+            Assert.IsFalse(reservation.isAllReserved(PLANE_NO));
+
+            for (int i = 0; i < 96; i++)
+            {
+                reservation.reserve(PLANE_NO, TEST_ID);
+            }
+
+            Assert.IsTrue(reservation.isAllReserved(PLANE_NO));
         }
     }
 }
