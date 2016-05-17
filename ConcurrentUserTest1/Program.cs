@@ -34,48 +34,40 @@ namespace ConcurrentUserTest1
                 initializeNewWorker();
                 Thread.Sleep(500);
             }
-            
+
             while (data.CurrentRunCount != 0)
             {
                 Thread.Sleep(1000);
-                Console.Out.WriteLine(string.Format("Current threads: {0}", data.CurrentRunCount));
-                Console.Out.WriteLine(string.Format("Threads started: {0}", data.StartedThreads));
+                Utility.HandleOutput(string.Format("Current threads: {0}", data.CurrentRunCount));
+                Utility.HandleOutput(string.Format("Threads started: {0}", data.StartedThreads));
             }
 
             foreach (var worker in workers)
-            {
-                Console.Out.WriteLine(string.Format("The user {0}, reserved the seat {1}, and got this return code: {2}", worker.Id, worker.seatNo, worker.ReturnCode));
-            }
+                Utility.HandleOutput(string.Format("The user {0}, reserved the seat {1}, and got this return code: {2}", worker.Id, worker.seatNo, worker.ReturnCode));
 
-            Console.WriteLine("Done!");
+            Utility.HandleOutput("Done!");
             Console.ReadLine();
         }
 
         private static void initializeNewWorker()
         {
             lock (data)
-            {
                 data.CurrentlyHighestId++;
-            }
 
             var worker = new OurBackgroundWorker(data.CurrentlyHighestId);
             worker.DoWork += Program_DoWork;
             worker.RunWorkerCompleted += Program_RunWorkerCompleted;
+
             worker.RunWorkerAsync();
             workers.Add(worker);
         }
 
         private static void Program_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
         {
-            OurBackgroundWorker obw = sender as OurBackgroundWorker;
             lock (data)
-            {
                 data.CurrentRunCount--;
-            }
             if (data.Run)
-            {
                 initializeNewWorker();
-            }
         }
 
         private static void Program_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
