@@ -6,22 +6,14 @@ namespace ConcurrentUserTest1
     public class Reservation
     {
         private MySqlConnection conn;
-        private string user;
-        private string pw;
         private int timeout;
 
-        public Reservation(string user, string pw)
+        public Reservation()
         {
             conn = Utility.GetConnection();
-            this.user = user;
-            this.pw = pw;
             timeout = -5;
         }
 
-        ~Reservation()
-        {
-            CloseConnection();
-        }
 
         public void CloseConnection()
         {

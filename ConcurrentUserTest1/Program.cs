@@ -15,8 +15,8 @@ namespace ConcurrentUserTest1
     public class Program
     {
         private static string PLANE_NO = "CR9";
-        private static int minThreads = 10;
-        private static int maxSleep = 1000;
+        //private static int minThreads = 10;
+        //private static int maxSleep = 1000;
         private static Random rnd = new Random();
         private static List<OurBackgroundWorker> workers = new List<OurBackgroundWorker>();
         private static DataObject data = new DataObject()
@@ -26,44 +26,42 @@ namespace ConcurrentUserTest1
             StartedThreads = 0,
             Run = true
         };
-        static int Reservations = 200;
+        //static int Reservations = 200;
         List<ReturnCode> bookresult = new List<ReturnCode>();
 
         public void ThreadPoolCallBack(Object ThreadContext)
         {
-            int result = -1;
-            Reservation res = new Reservation("User", "Password");
+            int result = -5;
+            Reservation res = new Reservation();
             long ID = (long)Thread.CurrentThread.ManagedThreadId;
-            Console.Out.WriteLine("Reserving {0}", ID);
+            
             string seatNo = res.reserve("CR9", ID);
             Random r = new Random();
-            Thread.Sleep(r.Next(0, 10000));
+            int sleepTime = r.Next(0, 10000);
+            Thread.Sleep(sleepTime);
             if (r.Next(0, 100) >= 75)
             {
+                Console.Out.WriteLine("Thread {0} gave up on booking seat {1} and slept for {2} ms", ID, seatNo, sleepTime);
             }
             else
             {
                 result = res.book("CR9", seatNo, ID);
+                Console.Out.WriteLine("Thread {0} attempted to book seat {1}, after sleeping for {2} ms. Result: {3}.", ID, seatNo, sleepTime, result);
             }
                 bookresult.Add((ReturnCode)result);
                 res.CloseConnection();
-
-
         }
 
         static void Main(string[] args)
         {
             int i = 0;
-            new Reservation("USER","").clearAllBookings(PLANE_NO);
+            new Reservation().clearAllBookings(PLANE_NO);
             Program p = new Program();
             int minWorker, minIOS;
 
             ThreadPool.GetMinThreads(out minWorker, out minIOS);
-
-
-
             ThreadPool.SetMinThreads(10, minIOS);
-            Reservation res = new Reservation("", "");
+            Reservation res = new Reservation();
             while (!res.isAllBooked(PLANE_NO))
             {
                 i++;
