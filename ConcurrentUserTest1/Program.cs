@@ -40,7 +40,6 @@ namespace ConcurrentUserTest1
             Thread.Sleep(r.Next(0, 10000));
             if (r.Next(0, 100) >= 75)
             {
-                res.CloseConnection();
             }
             else
             {
@@ -74,8 +73,8 @@ namespace ConcurrentUserTest1
 
             
              
-            Thread.Sleep(10000);
-
+            Thread.Sleep(11000);
+            Console.WriteLine("Result =");
             p.bookresult.ForEach(x => Utility.HandleOutput(x.ToString()));
             Console.ReadLine();
 
