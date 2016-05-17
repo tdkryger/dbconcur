@@ -1,51 +1,61 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ConcurrentUserTest1
 {
-    class Program
+    public class DataObject
     {
-        static int currentRunCount = 0;
-        static int RunCount = 10;
-        static int counter = 0;
-        static object lockObject = new object();
-        static Random rnd = new Random();
-        static int Reservations = 200;
-        List<int> bookresult = new List<int>();
+        public int CurrentRunCount { get; set; }
+        public int StartedThreads { get; set; }
+        public long CurrentlyHighestId { get; set; }
+        public bool Run { get; set; }
+    }
 
-        static System.ComponentModel.BackgroundWorker[] workers = new System.ComponentModel.BackgroundWorker[RunCount];
+    public class Program
+    {
+        private static string PLANE_NO = "CR9";
+        private static int minThreads = 10;
+        private static int maxSleep = 1000;
+        private static Random rnd = new Random();
+        private static List<OurBackgroundWorker> workers = new List<OurBackgroundWorker>();
+        private static DataObject data = new DataObject()
+        {
+            CurrentRunCount = 0,
+            CurrentlyHighestId = -1,
+            StartedThreads = 0,
+            Run = true
+        };
+        static int Reservations = 200;
+        List<ReturnCode> bookresult = new List<ReturnCode>();
 
         public void ThreadPoolCallBack(Object ThreadContext)
         {
-
+            int result = -1;
             Reservation res = new Reservation("User", "Password");
-            long ID = (long)Thread.GetDomainID();
-            Console.Out.WriteLine("Reserving");
+            long ID = (long)Thread.CurrentThread.ManagedThreadId;
+            Console.Out.WriteLine("Reserving {0}", ID);
             string seatNo = res.reserve("CR9", ID);
             Random r = new Random();
-            Thread.Sleep(r.Next(0,10000));
+            Thread.Sleep(r.Next(0, 10000));
             if (r.Next(0, 100) >= 75)
             {
-                
+                res.CloseConnection();
             }
             else
             {
-                int result = res.book("CR9", seatNo, ID);
-                bookresult.Add(result);
-
-
+                result = res.book("CR9", seatNo, ID);
             }
-            
-          
+                bookresult.Add((ReturnCode)result);
+                res.CloseConnection();
+
+
         }
 
         static void Main(string[] args)
         {
+            int i = 0;
+            new Reservation("USER","").clearAllBookings(PLANE_NO);
             Program p = new Program();
             int minWorker, minIOS;
 
@@ -53,70 +63,94 @@ namespace ConcurrentUserTest1
 
 
 
-            ThreadPool.SetMinThreads(4, minIOS);
-
-            for (int i = 0; i < Reservations; i++)
+            ThreadPool.SetMinThreads(10, minIOS);
+            Reservation res = new Reservation("", "");
+            while (!res.isAllBooked(PLANE_NO))
             {
+                i++;
                 ThreadPool.QueueUserWorkItem(p.ThreadPoolCallBack, i);
+                Thread.Sleep(100);
             }
-            Thread.Sleep(100000);
 
-            Console.Out.WriteLine(p.bookresult);
+            
+             
+            Thread.Sleep(10000);
+
+            p.bookresult.ForEach(x => Utility.HandleOutput(x.ToString()));
+            Console.ReadLine();
 
 
-
-            //        initializeWorkers();
-            //        for (int i = 0; i < workers.Length; i++)
-            //        {
-            //            if (!workers[i].IsBusy)
-            //                workers[i].RunWorkerAsync(i);
-            //        }
-            //        while (counter < 50)
-            //        {
-            //            Thread.Sleep(2);
-            //            Console.WriteLine("Running workers: " + currentRunCount);
-            //        }
-
-            //        Console.WriteLine("Done");
-            //        Console.ReadLine();
-            //    }
-
-            //    static void initializeWorkers()
+            //    for (int i = 0; i < minThreads; i++)
             //    {
-
-
-            //        for (int i = 0; i < workers.Length; i++)
-            //        {
-            //            workers[i] = new System.ComponentModel.BackgroundWorker();
-            //            workers[i].DoWork += Program_DoWork;
-            //            workers[i].RunWorkerCompleted += Program_RunWorkerCompleted;
-            //        }
+            //        initializeNewWorker();
+            //        Thread.Sleep(500);
             //    }
 
-            //    private static void Program_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
+            //    while (data.CurrentRunCount != 0)
             //    {
-            //        int idx = (int)e.Result;
-            //        lock (lockObject)
-            //        {
-            //            //Console.WriteLine(e.Result + ": " + counter);
-            //            currentRunCount--;
-            //        }
-            //        if (!workers[idx].IsBusy)
-            //            workers[idx].RunWorkerAsync(idx);
+            //        Thread.Sleep(1000);
+            //        Utility.HandleOutput(string.Format("Current threads: {0}", data.CurrentRunCount));
+            //        Utility.HandleOutput(string.Format("Threads started: {0}", data.StartedThreads));
             //    }
 
-            //    private static void Program_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
-            //    {
-            //        lock (lockObject)
-            //        {
-            //            currentRunCount++;
-            //            Thread.Sleep(rnd.Next(20, 400));
-            //            e.Result = (int)e.Argument;
-            //            counter++;
-            //        }
-            //    }
+            //    foreach (var worker in workers)
+            //        Utility.HandleOutput(string.Format("The user {0}, reserved the seat {1}, and got this return code: {2}", worker.Id, worker.seatNo, worker.ReturnCode));
 
+            //    Utility.HandleOutput("Done!");
+            //    Console.ReadLine();
             //}
+
+            //private static void initializeNewWorker()
+            //{
+            //    lock (data)
+            //        data.CurrentlyHighestId++;
+
+            //    var worker = new OurBackgroundWorker(data.CurrentlyHighestId);
+            //    worker.DoWork += Program_DoWork;
+            //    worker.RunWorkerCompleted += Program_RunWorkerCompleted;
+
+            //    worker.RunWorkerAsync();
+            //    workers.Add(worker);
+            //}
+
+            //private static void Program_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
+            //{
+            //    lock (data)
+            //        data.CurrentRunCount--;
+            //    if (data.Run)
+            //        initializeNewWorker();
+            //}
+
+            //private static void Program_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+            //{
+            //    Reservation res = new Reservation("", "");
+            //    lock (data)
+            //    {
+            //        data.CurrentRunCount++;
+            //        data.StartedThreads++;
+            //        data.Run = !res.isAllBooked(PLANE_NO);
+            //    }
+
+            //    OurBackgroundWorker obw = sender as OurBackgroundWorker;
+            //    obw.seatNo = res.reserve(PLANE_NO, obw.Id);
+            //    if (string.IsNullOrEmpty(obw.seatNo))
+            //    {
+            //        obw.seatNo = "No reservation";
+            //        obw.ReturnCode = 0;
+            //        obw.Id = 123456789;
+            //    }
+
+            //    Thread.Sleep(rnd.Next(0, maxSleep));
+
+            //    // 75%
+            //    if (rnd.Next(4) != 0)
+            //    {
+            //        obw.ReturnCode = (ReturnCode)res.book(PLANE_NO, obw.seatNo, obw.Id);
+            //    }
+
+            //    // This is because of some restrictions on the db (max open connections...)
+            //    res.CloseConnection();
+
         }
     }
-    }
+}
