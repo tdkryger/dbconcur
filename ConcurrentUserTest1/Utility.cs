@@ -29,5 +29,10 @@ namespace ConcurrentUserTest1
 
             return connection;
         }
+
+        public static void HandleOutput(string output)
+        {
+            Console.Out.WriteLine(output);
+        }
     }
 }
