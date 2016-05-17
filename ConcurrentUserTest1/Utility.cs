@@ -32,7 +32,7 @@ namespace ConcurrentUserTest1
 
         public static void HandleOutput(string output)
         {
-            Console.Out.WriteLine(output);
+            Console.WriteLine(string.Format(output));
         }
     }
 }

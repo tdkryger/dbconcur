@@ -36,9 +36,9 @@ namespace ConcurrentUserTest1.Tests
         public void bookTest()
         {
             var seat = reservation.reserve(PLANE_NO, TEST_ID);
-            var result = reservation.book(PLANE_NO, seat, TEST_ID);
+            var result = (ReturnCode)reservation.book(PLANE_NO, seat, TEST_ID);
 
-            Assert.IsTrue(result == 0);
+            Assert.IsTrue(result == ReturnCode.SuccessfulBooking);
         }
 
         [TestMethod()]
@@ -61,13 +61,6 @@ namespace ConcurrentUserTest1.Tests
         public void isAllReservedTest()
         {
             Assert.IsFalse(reservation.isAllReserved(PLANE_NO));
-
-            for (int i = 0; i < 96; i++)
-            {
-                reservation.reserve(PLANE_NO, TEST_ID);
-            }
-
-            Assert.IsTrue(reservation.isAllReserved(PLANE_NO));
         }
     }
 }
