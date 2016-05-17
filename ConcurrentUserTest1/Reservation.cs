@@ -170,11 +170,12 @@ namespace ConcurrentUserTest1
 
     public enum ReturnCode
     {
-        SuccefulBooking = 0,
+        Default = 0,
         SeatNotReserved = -1,
         SeatNotReservedForUser = -2,
         ReservationTimeout = -3,
         SeatAlreadyOccupied = -4,
-        Error = -5
+        Error = -5,
+        SuccefulBooking = -6
     }
 }
