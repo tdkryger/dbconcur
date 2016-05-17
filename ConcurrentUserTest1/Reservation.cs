@@ -39,7 +39,7 @@ namespace ConcurrentUserTest1
         public string reserve(string planeNo, long id)
         {
             dbTrans = conn.BeginTransaction();
-            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE (reserved IS NULL AND booked IS NULL AND booking_time IS NULL) OR (booked IS NULL AND booking_time < @current_time) LOCK IN SHARE MODE", conn);
+            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE (reserved IS NULL AND booked IS NULL AND booking_time IS NULL) OR (booked IS NULL AND booking_time < @current_time) FOR UPDATE", conn);
             selectCommand.Parameters.AddWithValue("current_time", DateTime.Now.AddSeconds(timeout));
 
             string seat_no;
@@ -70,7 +70,7 @@ namespace ConcurrentUserTest1
         public int book(string plane_no, string seat_no, long id)
         {
             dbTrans = conn.BeginTransaction();
-            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE plane_no = @plane_no AND seat_no = @seat_no LOCK IN SHARE MODE", conn);
+            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE plane_no = @plane_no AND seat_no = @seat_no  FOR UPDATE", conn);
             selectCommand.Parameters.AddWithValue("plane_no", plane_no);
             selectCommand.Parameters.AddWithValue("seat_no", seat_no);
             var reader = selectCommand.ExecuteReader();
