@@ -1,75 +1,106 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ConcurrentUserTest1
 {
-    class Program
+    public class DataObject
     {
-        static int currentRunCount = 0;
-        static int RunCount = 10;
-        static int counter = 0;
-        static object lockObject = new object();
-        static Random rnd = new Random();
+        public int CurrentRunCount { get; set; }
+        public int StartedThreads { get; set; }
+        public long CurrentlyHighestId { get; set; }
+        public bool Run { get; set; }
+    }
 
-        static System.ComponentModel.BackgroundWorker[] workers = new System.ComponentModel.BackgroundWorker[RunCount];
+    public class Program
+    {
+        private static string PLANE_NO = "CR9";
+        private static int minThreads = 10;
+        private static int maxSleep = 10000;
+        private static Random rnd = new Random();
+        private static List<OurBackgroundWorker> workers = new List<OurBackgroundWorker>();
+        private static DataObject data = new DataObject()
+        {
+            CurrentRunCount = 0,
+            CurrentlyHighestId = -1,
+            StartedThreads = 0,
+            Run = true
+        };
 
         static void Main(string[] args)
         {
-            initializeWorkers();
-            for (int i = 0; i < workers.Length; i++)
+            for (int i = 0; i < minThreads; i++)
             {
-                if (!workers[i].IsBusy)
-                    workers[i].RunWorkerAsync(i);
+                initializeNewWorker();
+                Thread.Sleep(500);
             }
-            while (counter < 50)
+            
+            while (data.CurrentRunCount != 0)
             {
-                Thread.Sleep(2);
-                Console.WriteLine("Running workers: " + currentRunCount);
+                Thread.Sleep(1000);
+                Console.Out.WriteLine(string.Format("Current threads: {0}", data.CurrentRunCount));
+                Console.Out.WriteLine(string.Format("Threads started: {0}", data.StartedThreads));
             }
 
-            Console.WriteLine("Done");
+            foreach (var worker in workers)
+            {
+                Console.Out.WriteLine(string.Format("The user {0}, reserved the seat {1}, and got this return code: {2}", worker.Id, worker.seatNo, worker.ReturnCode));
+            }
+
+            Console.WriteLine("Done!");
             Console.ReadLine();
         }
 
-        static void initializeWorkers()
+        private static void initializeNewWorker()
         {
-
-
-            for (int i = 0; i < workers.Length; i++)
+            lock (data)
             {
-                workers[i] = new System.ComponentModel.BackgroundWorker();
-                workers[i].DoWork += Program_DoWork;
-                workers[i].RunWorkerCompleted += Program_RunWorkerCompleted;
+                data.CurrentlyHighestId++;
             }
+
+            var worker = new OurBackgroundWorker(data.CurrentlyHighestId);
+            worker.DoWork += Program_DoWork;
+            worker.RunWorkerCompleted += Program_RunWorkerCompleted;
+            worker.RunWorkerAsync();
+            workers.Add(worker);
         }
 
         private static void Program_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
         {
-            int idx = (int)e.Result;
-            lock (lockObject)
+            OurBackgroundWorker obw = sender as OurBackgroundWorker;
+            lock (data)
             {
-                //Console.WriteLine(e.Result + ": " + counter);
-                currentRunCount--;
+                data.CurrentRunCount--;
             }
-            if (!workers[idx].IsBusy)
-                workers[idx].RunWorkerAsync(idx);
+            if (data.Run)
+            {
+                initializeNewWorker();
+            }
         }
 
         private static void Program_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
-            lock (lockObject)
+            Reservation res = new Reservation("", "");
+            lock (data)
             {
-                currentRunCount++;
-                Thread.Sleep(rnd.Next(20, 400));
-                e.Result = (int)e.Argument;
-                counter++;
+                data.CurrentRunCount++;
+                data.StartedThreads++;
+                data.Run = !res.isAllBooked(PLANE_NO);
             }
-        }
 
+            OurBackgroundWorker obw = sender as OurBackgroundWorker;
+            obw.seatNo = res.reserve(PLANE_NO, obw.Id);
+
+            Thread.Sleep(rnd.Next(0, maxSleep));
+
+            // 75%
+            if (rnd.Next(4) != 0)
+            {
+                obw.ReturnCode = (ReturnCode)res.book(PLANE_NO, obw.seatNo, obw.Id);
+            }
+
+            // This is because of some restrictions on the db (max open connections...)
+            res.CloseConnection();
+        }
     }
 }
