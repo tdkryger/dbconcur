@@ -113,7 +113,7 @@ namespace ConcurrentUserTest1
 
                 if (result == 1)// Rows affected
                 {
-                    return (int)ReturnCode.SuccefulBooking;
+                    return (int)ReturnCode.SuccessfulBooking;
                 }
                 else
                 {

@@ -44,7 +44,7 @@ namespace ConcurrentUserTest1
                 Utility.HandleOutput(string.Format("Threads started: {0}", data.StartedThreads));
             }
             var queryable = workers.AsQueryable();
-            var succesfullBookings = queryable.Count(x => x.ReturnCode == ReturnCode.SuccefulBooking);
+            var succesfullBookings = queryable.Count(x => x.ReturnCode == ReturnCode.SuccessfulBooking);
 
             Utility.HandleOutput(string.Format("Number of succesful bookings: {0}", succesfullBookings));
             Utility.HandleOutput("Done!");
