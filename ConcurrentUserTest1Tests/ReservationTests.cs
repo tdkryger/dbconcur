@@ -14,7 +14,7 @@ namespace ConcurrentUserTest1.Tests
         [TestInitialize()]
         public void BeforeAll()
         {
-            reservation = new Reservation(USER_NAME, PASSWORD);
+            reservation = new Reservation();
             reservation.clearAllBookings(PLANE_NO);
         }
         
