@@ -117,7 +117,7 @@ namespace ConcurrentUserTest1
                 if (result == 1)// Rows affected
                 {
                     dbTrans.Commit();
-                    return (int)ReturnCode.SuccefulBooking;
+                    return (int)ReturnCode.SuccessfulBooking;
                 }
                 else
                 {
@@ -176,6 +176,6 @@ namespace ConcurrentUserTest1
         ReservationTimeout = -3,
         SeatAlreadyOccupied = -4,
         Error = -5,
-        SuccefulBooking = -6
+        SuccessfulBooking = -6
     }
 }
