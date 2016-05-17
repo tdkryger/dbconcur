@@ -90,6 +90,10 @@ namespace ConcurrentUserTest1
             {
                 obw.ReturnCode = (ReturnCode)res.book(PLANE_NO, obw.SeatNo, obw.Id);
             }
+            else
+            {
+                obw.ReturnCode = ReturnCode.Default;
+            }
 
             // This is because of some restrictions on the db (max open connections...)
             res.CloseConnection();

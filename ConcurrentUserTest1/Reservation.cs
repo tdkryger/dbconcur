@@ -66,6 +66,11 @@ namespace ConcurrentUserTest1
 
         public int book(string plane_no, string seat_no, long id)
         {
+            if (string.IsNullOrEmpty(seat_no))
+            {
+                return (int)ReturnCode.Error;
+            }
+
             var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE plane_no = @plane_no AND seat_no = @seat_no", conn);
             selectCommand.Parameters.AddWithValue("plane_no", plane_no);
             selectCommand.Parameters.AddWithValue("seat_no", seat_no);
@@ -160,11 +165,12 @@ namespace ConcurrentUserTest1
 
     public enum ReturnCode
     {
-        SuccefulBooking = 0,
+        Default = 0,
         SeatNotReserved = -1,
         SeatNotReservedForUser = -2,
         ReservationTimeout = -3,
         SeatAlreadyOccupied = -4,
-        Error = -5
+        Error = -5,
+        SuccefulBooking = -6
     }
 }
