@@ -45,8 +45,15 @@ namespace ConcurrentUserTest1
             }
             var queryable = workers.AsQueryable();
             var succesfullBookings = queryable.Count(x => x.ReturnCode == ReturnCode.SuccessfulBooking);
+            var bookingsWithoutReservations = queryable.Count(x => x.ReturnCode == ReturnCode.SeatNotReserved);
+            var notReservedForUser = queryable.Count(x => x.ReturnCode == ReturnCode.SeatNotReservedForUser);
+            var seatAlreadyOccupied = queryable.Count(x => x.ReturnCode == ReturnCode.SeatAlreadyOccupied);
 
-            Utility.HandleOutput(string.Format("Number of succesful bookings: {0}", succesfullBookings));
+            Utility.HandleOutput(string.Format("Number of UserThreads started: {0}", data.StartedThreads));
+            Utility.HandleOutput(string.Format("Number of successful bookings: {0}", succesfullBookings));
+            Utility.HandleOutput(string.Format("Number of bookings without a reservation: {0}", bookingsWithoutReservations));
+            Utility.HandleOutput(string.Format("Number of bookings where the customer was not the one that held the reservation: {0}", notReservedForUser));
+            Utility.HandleOutput(string.Format("Number of bookings of occupied seats: {0}", seatAlreadyOccupied));
             Utility.HandleOutput("Done!");
             Console.ReadLine();
         }
