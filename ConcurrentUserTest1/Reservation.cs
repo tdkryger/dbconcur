@@ -18,6 +18,11 @@ namespace ConcurrentUserTest1
             timeout = -5;
         }
 
+        ~Reservation()
+        {
+            CloseConnection();
+        }
+
         public void CloseConnection()
         {
             conn.Close();

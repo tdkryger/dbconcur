@@ -16,7 +16,7 @@ namespace ConcurrentUserTest1
     {
         private static string PLANE_NO = "CR9";
         private static int minThreads = 10;
-        private static int maxSleep = 10000;
+        private static int maxSleep = 1000;
         private static Random rnd = new Random();
         private static List<OurBackgroundWorker> workers = new List<OurBackgroundWorker>();
         private static DataObject data = new DataObject()
@@ -82,6 +82,12 @@ namespace ConcurrentUserTest1
 
             OurBackgroundWorker obw = sender as OurBackgroundWorker;
             obw.seatNo = res.reserve(PLANE_NO, obw.Id);
+            if (string.IsNullOrEmpty(obw.seatNo))
+            {
+                obw.seatNo = "No reservation";
+                obw.ReturnCode = 0;
+                obw.Id = 123456789;
+            }
 
             Thread.Sleep(rnd.Next(0, maxSleep));
 
