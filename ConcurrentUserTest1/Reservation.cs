@@ -82,7 +82,7 @@ namespace ConcurrentUserTest1
                 reader.Read();
                 int reserved = reader.IsDBNull(2) ? -1337 : reader.GetInt32("reserved");
                 int booked = reader.IsDBNull(3) ? -1337 : reader.GetInt32("booked");
-                DateTime bookingTime = reader.GetDateTime("booking_time");
+                DateTime bookingTime = reader.IsDBNull(4) ? DateTime.MinValue : reader.GetDateTime("booking_time");
                 reader.Close();
                 if (reserved == -1337)
                 {

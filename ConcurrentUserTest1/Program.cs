@@ -16,7 +16,7 @@ namespace ConcurrentUserTest1
     {
         private static string PLANE_NO = "CR9";
         private static int minThreads = 10;
-        private static int maxSleep = 1000;
+        private static int maxSleep = 10000;
         private static Random rnd = new Random();
         private static List<OurBackgroundWorker> workers = new List<OurBackgroundWorker>();
         private static DataObject data = new DataObject()
@@ -29,6 +29,7 @@ namespace ConcurrentUserTest1
 
         static void Main(string[] args)
         {
+            new Reservation("", "").clearAllBookings(PLANE_NO);
             for (int i = 0; i < minThreads; i++)
             {
                 initializeNewWorker();
@@ -42,8 +43,7 @@ namespace ConcurrentUserTest1
                 Utility.HandleOutput(string.Format("Threads started: {0}", data.StartedThreads));
             }
 
-            foreach (var worker in workers)
-                Utility.HandleOutput(string.Format("The user {0}, reserved the seat {1}, and got this return code: {2}", worker.Id, worker.seatNo, worker.ReturnCode));
+            workers.ForEach(worker => Utility.HandleOutput(string.Format("The user {0}, reserved the seat {1}, and got this return code: {2}", worker.Id, worker.seatNo, worker.ReturnCode)));
 
             Utility.HandleOutput("Done!");
             Console.ReadLine();
@@ -84,9 +84,7 @@ namespace ConcurrentUserTest1
             obw.seatNo = res.reserve(PLANE_NO, obw.Id);
             if (string.IsNullOrEmpty(obw.seatNo))
             {
-                obw.seatNo = "No reservation";
-                obw.ReturnCode = 0;
-                obw.Id = 123456789;
+                Utility.HandleOutput("No seat reserved for user " + obw.Id);
             }
 
             Thread.Sleep(rnd.Next(0, maxSleep));
