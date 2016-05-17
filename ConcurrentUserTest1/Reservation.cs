@@ -19,6 +19,11 @@ namespace ConcurrentUserTest1
             timeout = -5;
         }
 
+        ~Reservation()
+        {
+            CloseConnection();
+        }
+
         public void CloseConnection()
         {
             conn.Close();
@@ -33,13 +38,11 @@ namespace ConcurrentUserTest1
 
         public string reserve(string planeNo, long id)
         {
-            
             dbTrans = conn.BeginTransaction();
+            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE (reserved IS NULL AND booked IS NULL AND booking_time IS NULL) OR (booked IS NULL AND booking_time < @current_time) LOCK IN SHARE MODE", conn);
+            selectCommand.Parameters.AddWithValue("current_time", DateTime.Now.AddSeconds(timeout));
 
-            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE (reserved IS NULL AND booked IS NULL AND booking_time IS NULL) OR (booked IS NULL AND booking_time < @currentTime) Lock In Share Mode", conn);
-            selectCommand.Parameters.AddWithValue("currentTime", DateTime.Now.AddSeconds(timeout));
             string seat_no;
-
             using (MySqlDataReader reader = selectCommand.ExecuteReader())
             {
                 reader.Read();
@@ -54,7 +57,6 @@ namespace ConcurrentUserTest1
                 updateCommand.Parameters.AddWithValue("plane_no", planeNo);
                 updateCommand.Parameters.AddWithValue("seat_no", seat_no);
                 updateCommand.ExecuteNonQuery();
-
                 dbTrans.Commit();
                 return seat_no;
             }
@@ -68,13 +70,7 @@ namespace ConcurrentUserTest1
         public int book(string plane_no, string seat_no, long id)
         {
             dbTrans = conn.BeginTransaction();
-
-            if (string.IsNullOrEmpty(seat_no) || string.IsNullOrWhiteSpace(seat_no))
-            {
-                return (int)ReturnCode.Error;
-            }
-
-            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE plane_no = @plane_no AND seat_no = @seat_no Lock In Share Mode", conn);
+            var selectCommand = new MySqlCommand("SELECT * FROM seat WHERE plane_no = @plane_no AND seat_no = @seat_no LOCK IN SHARE MODE", conn);
             selectCommand.Parameters.AddWithValue("plane_no", plane_no);
             selectCommand.Parameters.AddWithValue("seat_no", seat_no);
             var reader = selectCommand.ExecuteReader();
@@ -85,7 +81,7 @@ namespace ConcurrentUserTest1
                 reader.Read();
                 int reserved = reader.IsDBNull(2) ? -1337 : reader.GetInt32("reserved");
                 int booked = reader.IsDBNull(3) ? -1337 : reader.GetInt32("booked");
-                DateTime bookingTime = reader.GetDateTime("booking_time");
+                DateTime bookingTime = reader.IsDBNull(4) ? DateTime.MinValue : reader.GetDateTime("booking_time");
                 reader.Close();
                 if (reserved == -1337)
                 {
@@ -98,7 +94,7 @@ namespace ConcurrentUserTest1
                     return (int)ReturnCode.SeatNotReservedForUser;
                 }
 
-                if (DateTime.Compare(bookingTime, DateTime.Now.AddSeconds(timeout)) <= 0)
+                if (DateTime.Compare(bookingTime, DateTime.Now.AddMinutes(timeout)) <= 0)
                 {
                     dbTrans.Rollback();
                     return (int)ReturnCode.ReservationTimeout;
@@ -117,11 +113,11 @@ namespace ConcurrentUserTest1
                 updateCommand.Parameters.AddWithValue("seat_no", seat_no);
 
                 var result = updateCommand.ExecuteNonQuery();
-            
+
                 if (result == 1)// Rows affected
                 {
                     dbTrans.Commit();
-                    return (int)ReturnCode.SuccessfulBooking;                    
+                    return (int)ReturnCode.SuccefulBooking;
                 }
                 else
                 {
@@ -131,7 +127,6 @@ namespace ConcurrentUserTest1
             }
             else
             {
-                dbTrans.Rollback();
                 return (int)ReturnCode.Error;
             }
         }
@@ -160,28 +155,22 @@ namespace ConcurrentUserTest1
 
         public bool isAllReserved(string plane_no)
         {
-            var command = new MySqlCommand("SELECT reserved FROM seat WHERE plane_no = @plane_no", conn);
-            command.Parameters.AddWithValue("plane_no", plane_no);
-            var reader = command.ExecuteReader();
+            var command = new MySqlCommand("SELECT reserved FROM seat WHERE plane_no = @plane_no AND reserved IS NULL", conn);
 
-            while (reader.Read())
-            {
-                if (reader.IsDBNull(0))
-                {
-                    reader.Close();
-                    return false;
-                }
-            }
+            command.Parameters.AddWithValue("plane_no", plane_no);
+
+            var reader = command.ExecuteReader();
+            var result = reader.HasRows;
 
             reader.Close();
 
-            return true;
+            return !result;
         }
     }
 
     public enum ReturnCode
     {
-        SuccessfulBooking = 0,
+        SuccefulBooking = 0,
         SeatNotReserved = -1,
         SeatNotReservedForUser = -2,
         ReservationTimeout = -3,
