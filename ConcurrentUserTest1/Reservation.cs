@@ -171,6 +171,6 @@ namespace ConcurrentUserTest1
         ReservationTimeout = -3,
         SeatAlreadyOccupied = -4,
         Error = -5,
-        SuccefulBooking = -6
+        SuccessfulBooking = -6
     }
 }

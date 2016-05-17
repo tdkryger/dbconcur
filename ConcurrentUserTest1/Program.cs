@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace ConcurrentUserTest1
@@ -38,13 +39,14 @@ namespace ConcurrentUserTest1
 
             while (data.CurrentRunCount != 0)
             {
-                Thread.Sleep(1000);
+                Thread.Sleep(maxSleep);
                 Utility.HandleOutput(string.Format("Current threads: {0}", data.CurrentRunCount));
                 Utility.HandleOutput(string.Format("Threads started: {0}", data.StartedThreads));
             }
+            var queryable = workers.AsQueryable();
+            var succesfullBookings = queryable.Count(x => x.ReturnCode == ReturnCode.SuccefulBooking);
 
-            workers.ForEach(worker => Utility.HandleOutput(string.Format("The user {0}, reserved the seat {1}, and got this return code: {2}", worker.Id, worker.SeatNo, worker.ReturnCode)));
-
+            Utility.HandleOutput(string.Format("Number of succesful bookings: {0}", succesfullBookings));
             Utility.HandleOutput("Done!");
             Console.ReadLine();
         }
